@@ -77,15 +77,76 @@ const hash = (str: string) => {
   return hash;
 };
 
+// colors borrowed from https://raw.githubusercontent.com/tailwindlabs/tailwindcss/next/packages/tailwindcss/theme.css
 const colors = [
-  'orange',
-  'skyblue',
-  'green',
-  'blue',
-  'purple',
-  'deepskyblue',
-  'pink',
-  'deeppink',
+  '#f87171',
+  '#ef4444',
+  '#dc2626',
+  '#b91c1c',
+  '#fb923c',
+  '#f97316',
+  '#ea580c',
+  '#c2410c',
+  '#fbbf24',
+  '#f59e0b',
+  '#d97706',
+  '#b45309',
+  '#facc15',
+  '#eab308',
+  '#ca8a04',
+  '#a16207',
+  '#a3e635',
+  '#84cc16',
+  '#65a30d',
+  '#4d7c0f',
+  '#4ade80',
+  '#22c55e',
+  '#16a34a',
+  '#15803d',
+  '#34d399',
+  '#10b981',
+  '#059669',
+  '#047857',
+  '#2dd4bf',
+  '#14b8a6',
+  '#0d9488',
+  '#0f766e',
+  '#22d3ee',
+  '#06b6d4',
+  '#0891b2',
+  '#0e7490',
+  '#38bdf8',
+  '#0ea5e9',
+  '#0284c7',
+  '#0369a1',
+  '#60a5fa',
+  '#3b82f6',
+  '#2563eb',
+  '#1d4ed8',
+  '#818cf8',
+  '#6366f1',
+  '#4f46e5',
+  '#4338ca',
+  '#a78bfa',
+  '#8b5cf6',
+  '#7c3aed',
+  '#6d28d9',
+  '#c084fc',
+  '#a855f7',
+  '#9333ea',
+  '#7e22ce',
+  '#e879f9',
+  '#d946ef',
+  '#c026d3',
+  '#a21caf',
+  '#f472b6',
+  '#ec4899',
+  '#db2777',
+  '#be185d',
+  '#fb7185',
+  '#f43f5e',
+  '#e11d48',
+  '#be123c',
 ];
 
 const randomColorFor = (s: string) => colors[hash(s) % colors.length];
@@ -116,10 +177,13 @@ function App() {
   }, [users]);
 
   const fgRef = useRef();
+  // const fgRef = useRef<ForceGraphMethods<NodeObject<Node>, LinkObject<Node, Edge>>>();
+
+  // biome-ignore lint: i don't even know why it's complaining
   useEffect(() => {
-    if (fgRef.current) {
-      // @ts-expect-error i have no idea how to type this
-      fgRef.current.d3Force('charge').strength(-2000).distanceMax(1000);
+    if (fgRef?.current) {
+      // @ts-expect-error i can't figure out how to type this
+      fgRef.current.d3Force?.('charge')?.strength(-2000).distanceMax(1000);
     }
   }, [fgRef.current]);
 
@@ -136,7 +200,6 @@ function App() {
       files.map(f => f.text().then(t => JSON.parse(t)))
     );
 
-    // }
     const data: Data[] = usrs.map(u => makeData(u, randomColorFor(u.id)));
 
     setUsers(data);
@@ -212,7 +275,9 @@ function App() {
             />
 
             {importedUsers.map(u => (
-              <div style={{color: randomColorFor(u.id)}}>{u.username}</div>
+              <div key={u.id} style={{color: randomColorFor(u.id)}}>
+                {u.username}
+              </div>
             ))}
           </div>
           <ForceGraph
