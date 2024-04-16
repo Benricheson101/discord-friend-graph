@@ -74,7 +74,7 @@ const hash = (str: string) => {
     hash = (hash << 5) - hash + chr;
     hash |= 0; // Convert to 32bit integer
   }
-  return hash;
+  return Math.abs(hash);
 };
 
 // colors borrowed from https://raw.githubusercontent.com/tailwindlabs/tailwindcss/next/packages/tailwindcss/theme.css
