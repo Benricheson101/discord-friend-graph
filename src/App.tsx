@@ -265,7 +265,7 @@ function App() {
           <h1>Add one or more JSON files to get started.</h1>
           <p>
             Paste{' '}
-            <a href='https://github.com/benricheson101/discord-friend-graph/blob/main/scripts/console-snippet.js'>
+            <a href='https://raw.githubusercontent.com/Benricheson101/discord-friend-graph/main/scripts/console-snippet.js'>
               this script
             </a>{' '}
             into your Discord dev console to get the data
