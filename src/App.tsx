@@ -25,8 +25,8 @@ interface Friends {
 interface Node {
   id: string;
   label: string;
-  edges: number;
   avatar: string | null;
+  edges: Set<string>;
 }
 
 interface Edge {
@@ -38,34 +38,7 @@ interface Edge {
 
 type Data = {nodes: Node[]; links: Edge[]};
 
-const makeData = (user: Friends, color: string) => {
-  const nodes: Node[] = user.friends
-    .map(f => ({
-      id: f.id,
-      label: f.username,
-      avatar: f.avatar,
-      edges: f.mutualFriends.length + 1,
-    }))
-    .concat({
-      id: user.id,
-      avatar: user.avatar,
-      label: user.username,
-      edges: user.friends.length,
-    });
-
-  const edges: Edge[] = user.friends.flatMap(f =>
-    f.mutualFriends
-      .map(mf => ({id: mf, source: f.id, target: mf, color}))
-      .concat({
-        id: f.id,
-        source: user.id,
-        target: f.id,
-        color,
-      })
-  );
-
-  return {nodes, links: edges};
-};
+type DataWithUser = Data & {id: string};
 
 const hash = (str: string) => {
   let hash = 0;
@@ -151,33 +124,96 @@ const colors = [
 
 const randomColorFor = (s: string) => colors[hash(s) % colors.length];
 
+const makeData = (
+  user: Friends,
+  hideNonAdjacent: boolean
+): DataWithUser => {
+  const nodes: Node[] = user.friends
+    .map(f => ({
+      id: f.id,
+      label: f.username,
+      avatar: f.avatar,
+      edges: new Set(hideNonAdjacent ? [user.id] : f.mutualFriends.concat(user.id)),
+    }))
+    .concat({
+      id: user.id,
+      avatar: user.avatar,
+      label: user.username,
+      edges: new Set(user.friends.map(f => f.id)),
+    });
+
+  const edges: Edge[] = user.friends.flatMap(f =>
+    f.mutualFriends
+      .map(mf => hideNonAdjacent ? null : ({
+        id: `${f.id}-${mf}`,
+        source: f.id,
+        target: mf,
+        color: '#666',
+      }))
+      .concat({
+        id: `${user.id}-${f.id}`,
+        source: user.id,
+        target: f.id,
+        color: randomColorFor(user.id),
+      })
+      .filter(Boolean) as Edge[]
+  );
+
+  return {id: user.id, nodes, links: edges};
+};
+
 function App() {
   const [data, setData] = useState<Data>({nodes: [], links: []});
-  const [users, setUsers] = useState<Data[]>([]);
-  const [importedUsers, setImportedUsers] = useState<
-    Pick<User, 'id' | 'username'>[]
-  >([]);
+  const [inputData, setInputData] = useState<Friends[]>([]);
+
   const [show3D, setShow3D] = useState(false);
+  const [hideNonAdjacent, setHideNonAdjacent] = useState(false);
 
   useEffect(() => {
-    const seen = new Map<string, Node>();
+    const data: DataWithUser[] = inputData.map(u =>
+      makeData(u, hideNonAdjacent)
+    );
 
-    for (const person of users) {
+    const seenNodes = new Map<string, Node>();
+    const seenEdges = new Map<string, Edge>();
+
+    for (const person of data) {
       for (const node of person.nodes) {
-        seen.set(node.id, node);
+        const existingNode = seenNodes.get(node.id);
+        if (existingNode) {
+          node.edges = new Set([...node.edges, ...existingNode.edges]);
+        }
+
+        seenNodes.set(node.id, node);
+      }
+
+      for (const edge of person.links) {
+        if (edge.source === person.id) {
+          seenEdges.delete(`${edge.source}-${edge.target}`) ||
+            seenEdges.delete(`${edge.target}-${edge.source}`);
+          seenEdges.set(`${edge.source}-${edge.target}`, edge);
+        }
+
+        if (
+          !(
+            seenEdges.has(`${edge.source}-${edge.target}`) ||
+            seenEdges.has(`${edge.target}-${edge.source}`)
+          )
+        ) {
+          seenEdges.set(`${edge.source}-${edge.target}`, edge);
+        }
       }
     }
 
     const merged: {nodes: Node[]; links: Edge[]} = {
-      nodes: [...seen.values()],
-      links: users.reduce((a, c) => a.concat(c.links), [] as Edge[]),
+      nodes: [...seenNodes.values()],
+      links: [...seenEdges.values()],
     };
 
     setData(merged);
-  }, [users]);
+  }, [inputData, hideNonAdjacent]);
 
   const fgRef = useRef();
-  // const fgRef = useRef<ForceGraphMethods<NodeObject<Node>, LinkObject<Node, Edge>>>();
 
   // biome-ignore lint: i don't even know why it's complaining
   useEffect(() => {
@@ -200,26 +236,20 @@ function App() {
       files.map(f => f.text().then(t => JSON.parse(t)))
     );
 
-    const data: Data[] = usrs.map(u => makeData(u, randomColorFor(u.id)));
-
-    setUsers(data);
-    setImportedUsers(usrs.map(u => ({id: u.id, username: u.username})));
+    setInputData(usrs);
   };
 
   const parseClipboard: MouseEventHandler<HTMLButtonElement> = async () => {
     const clipboardData = await navigator.clipboard.readText();
     const users: Friends[] = clipboardData.split('\n').map(d => JSON.parse(d));
-    const data: Data[] = users.map(u => makeData(u, randomColorFor(u.id)));
-
-    setUsers(data);
-    setImportedUsers(users.map(u => ({id: u.id, username: u.username})));
+    setInputData(users);
   };
 
   const ForceGraph = show3D ? ForceGraph3D : ForceGraph2D;
 
   return (
     <>
-      {users.length === 0 ? (
+      {inputData.length === 0 ? (
         <div
           style={{
             position: 'absolute',
@@ -244,12 +274,17 @@ function App() {
             onChange={onSubmitFiles}
           />
           <button type='button' onClick={parseClipboard}>
-            Use data from clipboard
+            Read data from clipboard
           </button>
         </div>
       ) : (
         <>
-          <div style={{position: 'absolute', zIndex: '1'}}>
+          <div
+            style={{
+              position: 'absolute',
+              zIndex: '1',
+            }}
+          >
             <button
               type='button'
               onClick={() => setShowLabels(s => !s)}
@@ -266,6 +301,16 @@ function App() {
               {show3D ? 'Show 2D' : 'Show 3D'}
             </button>
 
+            <button
+              type='button'
+              onClick={() => setHideNonAdjacent(s => !s)}
+              style={{display: 'block'}}
+            >
+              {hideNonAdjacent
+                ? 'Show Friends of Friends'
+                : 'Hide Friends of Friends'}
+            </button>
+
             <input
               type='file'
               accept='.json'
@@ -274,7 +319,10 @@ function App() {
               onChange={onSubmitFiles}
             />
 
-            {importedUsers.map(u => (
+            <div>Nodes: {data.nodes.length}</div>
+            <div>Edges: {data.links.length}</div>
+
+            {inputData.map(u => (
               <div key={u.id} style={{color: randomColorFor(u.id)}}>
                 {u.username}
               </div>
@@ -285,12 +333,12 @@ function App() {
             graphData={data}
             linkColor={(edge: Edge) => edge.color}
             linkWidth={show3D ? 1.0 : 0.5}
-            nodeLabel={(n: Node) => n.label}
-            nodeVal={(n: Node) => n.edges}
+            nodeLabel={(n: Node) => `${n.label} (${n.edges.size})`}
+            nodeVal={(n: Node) => n.edges.size}
             nodeCanvasObject={
               showLabels
                 ? (node, ctx, globalScale) => {
-                    const label = node.label;
+                    const label = `${node.label} (${node.edges.size})`;
                     const fontSize = 12 / globalScale;
                     ctx.font = `${fontSize}px Sans-Serif`;
                     ctx.textAlign = 'center';
