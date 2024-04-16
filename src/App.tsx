@@ -1,6 +1,12 @@
+import {
+  type ChangeEventHandler,
+  type MouseEventHandler,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import ForceGraph3D from 'react-force-graph-3d';
-import {type ChangeEventHandler, useEffect, useRef, useState} from 'react';
 
 interface User {
   id: string;
@@ -137,6 +143,15 @@ function App() {
     setImportedUsers(usrs.map(u => ({id: u.id, username: u.username})));
   };
 
+  const parseClipboard: MouseEventHandler<HTMLButtonElement> = async () => {
+    const clipboardData = await navigator.clipboard.readText();
+    const users: Friends[] = clipboardData.split('\n').map(d => JSON.parse(d));
+    const data: Data[] = users.map(u => makeData(u, randomColorFor(u.id)));
+
+    setUsers(data);
+    setImportedUsers(users.map(u => ({id: u.id, username: u.username})));
+  };
+
   const ForceGraph = show3D ? ForceGraph3D : ForceGraph2D;
 
   return (
@@ -165,6 +180,9 @@ function App() {
             style={{display: 'block'}}
             onChange={onSubmitFiles}
           />
+          <button type='button' onClick={parseClipboard}>
+            Use data from clipboard
+          </button>
         </div>
       ) : (
         <>
