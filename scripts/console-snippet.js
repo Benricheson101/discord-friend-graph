@@ -1,4 +1,9 @@
 const getMutualFriendsData = async () => {
+  console.log(
+    '%cOnly run this once, it may take a minute or two to finish depending on the size of your friends list',
+    'color:skyblue;font-size:15px'
+  );
+
   let wpRequire;
   webpackChunkdiscord_app.push([[Date.now()], {}, e => (wpRequire = e)]);
   const mods = Object.values(wpRequire.c);
@@ -69,6 +74,6 @@ try {
 
 console.log('%c' + JSON.stringify(friends), 'color:skyblue');
 console.log(
-  "%cFriends list data should be copied to your clipboard. If not, manually cop the wall of text above (there's a copy button at the end)",
+  "%cFriends list data should be copied to your clipboard. If not, manually copy the wall of text above (there's a copy button at the end)",
   'color:red;font-size:20px'
 );
