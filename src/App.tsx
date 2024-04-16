@@ -1,4 +1,5 @@
 import ForceGraph2D from 'react-force-graph-2d';
+import ForceGraph3D from 'react-force-graph-3d';
 import {type ChangeEventHandler, useEffect, useRef, useState} from 'react';
 
 interface User {
@@ -89,6 +90,7 @@ function App() {
   const [importedUsers, setImportedUsers] = useState<
     Pick<User, 'id' | 'username'>[]
   >([]);
+  const [show3D, setShow3D] = useState(false);
 
   useEffect(() => {
     const seen = new Map<string, Node>();
@@ -135,6 +137,8 @@ function App() {
     setImportedUsers(usrs.map(u => ({id: u.id, username: u.username})));
   };
 
+  const ForceGraph = show3D ? ForceGraph3D : ForceGraph2D;
+
   return (
     <>
       {users.length === 0 ? (
@@ -173,6 +177,14 @@ function App() {
               Toggle Labels
             </button>
 
+            <button
+              type='button'
+              onClick={() => setShow3D(s => !s)}
+              style={{display: 'block'}}
+            >
+              {show3D ? 'Show 2D' : 'Show 3D'}
+            </button>
+
             <input
               type='file'
               accept='.json'
@@ -185,13 +197,13 @@ function App() {
               <div style={{color: randomColorFor(u.id)}}>{u.username}</div>
             ))}
           </div>
-          <ForceGraph2D
+          <ForceGraph
             ref={fgRef}
             graphData={data}
-            linkColor={edge => edge.color}
+            linkColor={(edge: Edge) => edge.color}
             linkWidth={0.4}
-            nodeLabel={n => n.label}
-            nodeVal={n => n.edges}
+            nodeLabel={(n: Node) => n.label}
+            nodeVal={(n: Node) => n.edges}
             nodeCanvasObject={
               showLabels
                 ? (node, ctx, globalScale) => {
