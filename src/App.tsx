@@ -201,7 +201,7 @@ function App() {
             ref={fgRef}
             graphData={data}
             linkColor={(edge: Edge) => edge.color}
-            linkWidth={0.4}
+            linkWidth={show3D ? 1.0 : 0.5}
             nodeLabel={(n: Node) => n.label}
             nodeVal={(n: Node) => n.edges}
             nodeCanvasObject={
