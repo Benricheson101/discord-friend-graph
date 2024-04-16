@@ -3,6 +3,10 @@ html, body {
   margin: 0;
 }
 
+input[type=file] {
+  color: transparent;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   color-scheme: light dark;
@@ -22,8 +26,5 @@ html, body {
   }
   a:hover {
     color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
   }
 }

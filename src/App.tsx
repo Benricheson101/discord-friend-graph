@@ -124,16 +124,15 @@ const colors = [
 
 const randomColorFor = (s: string) => colors[hash(s) % colors.length];
 
-const makeData = (
-  user: Friends,
-  hideNonAdjacent: boolean
-): DataWithUser => {
+const makeData = (user: Friends, hideNonAdjacent: boolean): DataWithUser => {
   const nodes: Node[] = user.friends
     .map(f => ({
       id: f.id,
       label: f.username,
       avatar: f.avatar,
-      edges: new Set(hideNonAdjacent ? [user.id] : f.mutualFriends.concat(user.id)),
+      edges: new Set(
+        hideNonAdjacent ? [user.id] : f.mutualFriends.concat(user.id)
+      ),
     }))
     .concat({
       id: user.id,
@@ -142,21 +141,26 @@ const makeData = (
       edges: new Set(user.friends.map(f => f.id)),
     });
 
-  const edges: Edge[] = user.friends.flatMap(f =>
-    f.mutualFriends
-      .map(mf => hideNonAdjacent ? null : ({
-        id: `${f.id}-${mf}`,
-        source: f.id,
-        target: mf,
-        color: '#666',
-      }))
-      .concat({
-        id: `${user.id}-${f.id}`,
-        source: user.id,
-        target: f.id,
-        color: randomColorFor(user.id),
-      })
-      .filter(Boolean) as Edge[]
+  const edges: Edge[] = user.friends.flatMap(
+    f =>
+      f.mutualFriends
+        .map(mf =>
+          hideNonAdjacent
+            ? null
+            : {
+                id: `${f.id}-${mf}`,
+                source: f.id,
+                target: mf,
+                color: '#9ca3af70',
+              }
+        )
+        .concat({
+          id: `${user.id}-${f.id}`,
+          source: user.id,
+          target: f.id,
+          color: randomColorFor(user.id),
+        })
+        .filter(Boolean) as Edge[]
   );
 
   return {id: user.id, nodes, links: edges};
