@@ -7,13 +7,28 @@ const getMutualFriendsData = async () => {
   let wpRequire;
   webpackChunkdiscord_app.push([[Date.now()], {}, e => (wpRequire = e)]);
   const mods = Object.values(wpRequire.c);
+  const allExports = mods
+    .flatMap(
+      c =>
+        (c.exports &&
+          !c.exports[Symbol.toStringTag]?.includes('DOM') &&
+          Object.values(c.exports)) ||
+        []
+    )
+    .filter(Boolean);
+
+  const _hasEveryProp = (a, props) =>
+    a && typeof a === 'object' && props.every(p => p in a);
+  const findByProps = (...props) =>
+    allExports.find(e => _hasEveryProp(e, props)) ||
+    mods.find(m => m?.exports && _hasEveryProp(m.exports, props))?.exports;
 
   const stores = mods
-    .find(m => m?.exports?.default?.Store)
-    .exports.default.Store.getAll()
+    .find(m => m?.exports?.ZP?.Store)
+    .exports.ZP.Store.getAll()
     .reduce((a, c) => ((a[c.getName()] = c), a), {});
-  const HTTP = mods.find(m => m?.exports?.HTTP).exports.HTTP;
-  const constants = mods.find(m => m?.exports?.UserFlags).exports;
+  const HTTP = findByProps('get', 'put', 'patch');
+  const Endpoints = findByProps('USER_RELATIONSHIPS');
 
   const {have, need} = stores.RelationshipStore.getFriendIDs().reduce(
     (a, f) => {
@@ -38,9 +53,9 @@ const getMutualFriendsData = async () => {
 
   let i = 0;
   for (const r of need) {
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 450));
     const {body} = await HTTP.get({
-      url: constants.Endpoints.USER_RELATIONSHIPS(r),
+      url: Endpoints.USER_RELATIONSHIPS(r),
     });
 
     const user = stores.UserStore.getUser(r);
