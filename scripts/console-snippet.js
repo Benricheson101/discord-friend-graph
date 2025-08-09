@@ -4,8 +4,7 @@ const getMutualFriendsData = async () => {
     'color:skyblue;font-size:15px'
   );
 
-  let wpRequire;
-  webpackChunkdiscord_app.push([[Date.now()], {}, e => (wpRequire = e)]);
+  let wpRequire = webpackChunkdiscord_app.push([[Date.now()], {}, e => e]);
   const mods = Object.values(wpRequire.c);
   const allExports = mods
     .flatMap(
@@ -53,7 +52,7 @@ const getMutualFriendsData = async () => {
 
   let i = 0;
   for (const r of need) {
-    await new Promise(r => setTimeout(r, 450));
+    await new Promise(r => setTimeout(r, 500));
     const {body} = await HTTP.get({
       url: Endpoints.USER_RELATIONSHIPS(r),
     });
